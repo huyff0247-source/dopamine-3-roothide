@@ -8,7 +8,7 @@ LDFLAGS = -larchive -lbsm -L../.build -F ../_external/frameworks -lchoma
 sign: $(TARGET)
 	@ldid -Cadhoc -S $<
 
-$(TARGET): $(wildcard src/*.c src/*.m src/*.S ../_external/modules/litehook/src/*.c)
+$(TARGET): $(wildcard src/*.c src/*.m src/*.S src/roothider/*.c src/roothider/*.m src/roothider/*.cpp ../_external/modules/litehook/src/*.c)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
 clean:
