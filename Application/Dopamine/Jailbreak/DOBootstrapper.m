@@ -686,7 +686,7 @@ int getCFMajorVersion(void)
 @implementation DOBootstrapper(roothide)
 
 #define STRAPLOG(...)   [[DOUIManager sharedInstance] sendLog:[NSString stringWithFormat:@__VA_ARGS__] debug:YES];
-#define ASSERT(...)     do{if(!(__VA_ARGS__)) {completion([NSError errorWithDomain:bootstrapErrorDomain code:BootstrapErrorCodeFailedExtracting userInfo:@{NSLocalizedDescriptionKey : [NSString stringWithFormat:@"ABORT: %s (%d): %s", __FILE_NAME__, __LINE__, #__VA_ARGS__]}]);return -1;}} while(0)
+#define ASSERT(...)     do{if(!(__VA_ARGS__)) {completion([NSError errorWithDomain:bootstrapErrorDomain code:BootstrapErrorCodeFailedExtracting userInfo:@{NSLocalizedDescriptionKey : [NSString stringWithFormat:@"ABORT: %s (%d): %s (errno %d: %s)", __FILE_NAME__, __LINE__, #__VA_ARGS__, errno, strerror(errno)]}]);return -1;}} while(0)
 
 - (NSString *)bootstrapVersion
 {
@@ -718,6 +718,9 @@ int getCFMajorVersion(void)
 
     NSString* jbroot_path = installPath;
 
+    if([fm fileExistsAtPath:jbroot_path]) {
+        ASSERT([fm removeItemAtPath:jbroot_path error:nil]);
+    }
     ASSERT(mkdir(jbroot_path.fileSystemRepresentation, 0755) == 0);
     ASSERT(chown(jbroot_path.fileSystemRepresentation, 0, 0) == 0);
 
