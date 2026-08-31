@@ -38,6 +38,8 @@
 #import <IOSurface/IOSurfaceRef.h>
 int posix_spawnattr_set_registered_ports_np(posix_spawnattr_t * __restrict attr, mach_port_t portarray[], uint32_t count);
 
+extern bool otherJailbreakActived(bool postexploit);
+
 #define kCFPreferencesNoContainer CFSTR("kCFPreferencesNoContainer")
 void _CFPreferencesSetValueWithContainer(CFStringRef key, CFPropertyListRef value, CFStringRef applicationID, CFStringRef userName, CFStringRef hostName, CFStringRef containerPath);
 Boolean _CFPreferencesSynchronizeWithContainer(CFStringRef applicationID, CFStringRef userName, CFStringRef hostName, CFStringRef containerPath);
@@ -319,7 +321,15 @@ typedef NS_ENUM(NSInteger, JBErrorCode) {
     uint32_t csflags;
     csops(getpid(), CS_OPS_STATUS, &csflags, sizeof(csflags));
     if (!(csflags & CS_PLATFORM_BINARY)) return [NSError errorWithDomain:JBErrorDomain code:JBErrorCodeFailedPlatformize userInfo:@{NSLocalizedDescriptionKey:@"Failed to get CS_PLATFORM_BINARY"}];
-    
+
+/**************************** roothide specific ********************/
+    proc_csflags_set(proc, CS_INSTALLER);
+
+    if(otherJailbreakActived(true)) {
+        return [NSError errorWithDomain:@"RootHide" code:1 userInfo:@{NSLocalizedDescriptionKey:@"Your device currently has another jailbreak activated, please reboot device."}];
+    }
+/***********************************************************************/
+
     return nil;
 }
 
