@@ -98,13 +98,19 @@ typedef NS_ENUM(NSInteger, JBErrorCode) {
             NULL,
             NULL,
             NULL,
+            NULL,
+            NULL,
         };
 
         uint32_t idx = 0;
         while(sets[++idx]);
 
+        sets[idx++] = "namecache";
+        if (xpf_set_is_supported("amfi_oids")) {
+            sets[idx++] = "amfi_oids";
+        }
         if (xpf_set_is_supported("devmode")) {
-            sets[idx++] = "devmode"; 
+            sets[idx++] = "devmode";
         }
         if (xpf_set_is_supported("badRecovery")) {
             sets[idx++] = "badRecovery"; 

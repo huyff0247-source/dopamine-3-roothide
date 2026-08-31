@@ -542,6 +542,109 @@ NSString *const bootstrapErrorDomain = @"BootstrapErrorDomain";
 
 /************************* roothide specific additions *******************/
 
+uint64_t jbrand_new();
+uint64_t jbrand_current();
+int is_jbroot_name(char* name);
+NSString* find_jbroot(BOOL force);
+NSString* jbrootPrefix(NSString *path);
+NSString* rootfsPrefix(NSString* path);
+
+uint64_t jbrand_new()
+{
+    uint64_t value = ((uint64_t)arc4random()) | ((uint64_t)arc4random())<<32;
+    uint8_t check = value>>8 ^ value >> 16 ^ value>>24 ^ value>>32 ^ value>>40 ^ value>>48 ^ value>>56;
+    return (value & ~0xFF) | check;
+}
+
+int is_jbrand_value(uint64_t value)
+{
+   uint8_t check = value>>8 ^ value >> 16 ^ value>>24 ^ value>>32 ^ value>>40 ^ value>>48 ^ value>>56;
+   return check == (uint8_t)value;
+}
+
+#define JB_ROOT_PREFIX ".jbroot-"
+#define JB_RAND_LENGTH  (sizeof(uint64_t)*sizeof(char)*2)
+
+int is_jbroot_name(char* name)
+{
+    if(strlen(name) != (sizeof(JB_ROOT_PREFIX)-1+JB_RAND_LENGTH))
+        return 0;
+    if(strncmp(name, JB_ROOT_PREFIX, sizeof(JB_ROOT_PREFIX)-1) != 0)
+        return 0;
+    char* endp=NULL;
+    uint64_t value = strtoull(name+sizeof(JB_ROOT_PREFIX)-1, &endp, 16);
+    if(!endp || *endp!='\0')
+        return 0;
+    if(!is_jbrand_value(value))
+        return 0;
+    return 1;
+}
+
+uint64_t resolve_jbrand_value(const char* name)
+{
+    if(strlen(name) != (sizeof(JB_ROOT_PREFIX)-1+JB_RAND_LENGTH))
+        return 0;
+    if(strncmp(name, JB_ROOT_PREFIX, sizeof(JB_ROOT_PREFIX)-1) != 0)
+        return 0;
+    char* endp=NULL;
+    uint64_t value = strtoull(name+sizeof(JB_ROOT_PREFIX)-1, &endp, 16);
+    if(!endp || *endp!='\0')
+        return 0;
+    if(!is_jbrand_value(value))
+        return 0;
+    return value;
+}
+
+NSString* find_jbroot(BOOL force)
+{
+    static NSString* cached_jbroot = nil;
+    if(!force && cached_jbroot) {
+        return cached_jbroot;
+    }
+    @synchronized(@"find_jbroot_lock")
+    {
+        NSString * jbroot = nil;
+        NSArray *subItems = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/var/containers/Bundle/Application/" error:nil];
+        for (NSString *subItem in subItems) {
+            if (is_jbroot_name(subItem.UTF8String))
+            {
+                NSString* path = [@"/var/containers/Bundle/Application/" stringByAppendingPathComponent:subItem];
+                jbroot = path;
+                break;
+            }
+        }
+        cached_jbroot = jbroot;
+    }
+    return cached_jbroot;
+}
+
+uint64_t jbrand_current()
+{
+    NSString* jbroot = find_jbroot(NO);
+    assert(jbroot != NULL);
+    return resolve_jbrand_value([jbroot lastPathComponent].UTF8String);
+}
+
+NSString* jbrootPrefix(NSString *path)
+{
+    if(!path || path.UTF8String[0]!='/') {
+        return path;
+    }
+    NSString* jbroot = find_jbroot(NO);
+    assert(jbroot != NULL);
+    return [jbroot stringByAppendingPathComponent:path];
+}
+
+NSString* rootfsPrefix(NSString* path)
+{
+    if(!path || path.UTF8String[0]!='/') {
+        return path;
+    }
+    return [@"/rootfs/" stringByAppendingPathComponent:path];
+}
+
+/************************* roothide specific additions *******************/
+
 #import "NSString+Version.h"
 
 #define DOPAMINE_INSTALL_VERSION    2

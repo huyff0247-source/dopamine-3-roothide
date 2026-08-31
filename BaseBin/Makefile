@@ -18,6 +18,12 @@ ChOma: .build .include
 	@cp -r ChOma/output/ios/include/choma .include
 
 XPF: .build .include ChOma
+	@if [ ! -f XPF/.roothide-patched ]; then \
+		mkdir -p XPF/external/ios; \
+		cp -R xpf-overlay/ios-include XPF/external/ios/include; \
+		git -C XPF apply ../xpf-overlay/roothide.patch; \
+		touch XPF/.roothide-patched; \
+	fi
 	@$(MAKE) -C XPF output/ios/libxpf.dylib CHOMA_PATH=../ChOma CHOMA_DYLIB_PATH="../.build"
 	@ldid -Cadhoc -s XPF/output/ios/libxpf.dylib
 	@cp XPF/output/ios/libxpf.dylib .build/libxpf.dylib
