@@ -697,6 +697,7 @@ int getCFMajorVersion(void)
 {
     NSFileManager* fm = NSFileManager.defaultManager;
 
+    ASSERT([fm createDirectoryAtPath:jbrootPrefix(@"/etc/apt/sources.list.d") withIntermediateDirectories:YES attributes:nil error:nil]);
     ASSERT([[NSString stringWithFormat:@(DEFAULT_SOURCES), getCFMajorVersion(), getCFMajorVersion()] writeToFile:jbrootPrefix(@"/etc/apt/sources.list.d/default.sources") atomically:YES encoding:NSUTF8StringEncoding error:nil]);
 
     if(![fm fileExistsAtPath:jbrootPrefix(@"/var/mobile/Library/Application Support/xyz.willy.Zebra")])
