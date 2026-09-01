@@ -946,7 +946,8 @@ int getCFMajorVersion(void)
     struct stat st={0};
     int r = lstat(jbpath, &st);
     if(r != 0) {
-        assert(errno != 0);
+        // symlink missing — nothing to fix
+        if(errno == ENOENT) return 0;
         return errno;
     }
 
@@ -955,7 +956,10 @@ int getCFMajorVersion(void)
     }
 
     char link[PATH_MAX+1] = {0};
-    assert(readlink(jbpath, link, sizeof(link)-1) > 0);
+    ssize_t len = readlink(jbpath, link, sizeof(link)-1);
+    if(len <= 0) return 0;
+    link[len] = '\0';
+
     if(link[0] != '/') {
         return 0;
     }
@@ -965,14 +969,13 @@ int getCFMajorVersion(void)
     NSString *pattern = @"^(?:/private)?/var/containers/Bundle/Application/\\.jbroot-[0-9A-Z]{16}(/.+)$";
     NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:pattern options:0 error:nil];
     NSTextCheckingResult *match = [regex firstMatchInString:_link options:0 range:NSMakeRange(0, [_link length])];
-    assert(match != nil);
+    if(!match) return 0;
 
     NSString* target = [_link substringWithRange:[match rangeAtIndex:1]];
     NSString* newlink = [@".jbroot" stringByAppendingPathComponent:target];
 
-    assert(unlink(jbpath) == 0);
-    assert(symlink(newlink.fileSystemRepresentation, jbpath) == 0);
-    assert(access(jbpath, F_OK) == 0);
+    unlink(jbpath);
+    if(symlink(newlink.fileSystemRepresentation, jbpath) != 0) return errno;
 
     return 0;
 }
