@@ -318,6 +318,15 @@ NSString *const bootstrapErrorDomain = @"BootstrapErrorDomain";
         completion(error);
         return;
     }
+
+    // Create basebin/.jbroot symlink for roothidehooks.dylib to resolve @loader_path/.jbroot/usr/lib/libroothide.dylib
+    NSString *basebinJbrootLink = JBROOT_PATH(@"/basebin/.jbroot");
+    [[NSFileManager defaultManager] removeItemAtPath:basebinJbrootLink error:nil];
+    if (![[NSFileManager defaultManager] createSymbolicLinkAtPath:basebinJbrootLink withDestinationPath:@".." error:&error]) {
+        completion([NSError errorWithDomain:bootstrapErrorDomain code:BootstrapErrorCodeFailedExtracting userInfo:@{NSLocalizedDescriptionKey : [NSString stringWithFormat:@"Failed creating basebin/.jbroot symlink: %@", error.localizedDescription]}]);
+        return;
+    }
+
     [self patchBasebinDaemonPlists];
 
     void (^bootstrapFinishedCompletion)(NSError *) = ^(NSError *error){
@@ -923,8 +932,17 @@ int getCFMajorVersion(void)
             completion(error);
             return;
         }
-        [self patchBasebinDaemonPlists];
 
+        // Create basebin/.jbroot symlink so roothidehooks.dylib resolves
+        // @loader_path/.jbroot/usr/lib/libroothide.dylib (loader_path == <jbroot>/basebin)
+        NSString *basebinJbrootLink = jbrootPrefix(@"/basebin/.jbroot");
+        [[NSFileManager defaultManager] removeItemAtPath:basebinJbrootLink error:nil];
+        if (![[NSFileManager defaultManager] createSymbolicLinkAtPath:basebinJbrootLink withDestinationPath:@".." error:&error]) {
+            completion([NSError errorWithDomain:bootstrapErrorDomain code:BootstrapErrorCodeFailedExtracting userInfo:@{NSLocalizedDescriptionKey : [NSString stringWithFormat:@"Failed creating basebin/.jbroot symlink: %@", error.localizedDescription]}]);
+            return;
+        }
+
+        [self patchBasebinDaemonPlists];
         JBFixMobilePermissions();
 
         completion(nil);
