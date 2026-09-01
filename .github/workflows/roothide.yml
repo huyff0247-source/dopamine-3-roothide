@@ -76,18 +76,6 @@ jobs:
             cd Application/Dopamine/Resources
             ./download_bootstraps.sh
 
-      - name: Build Packages
-        run: |
-          set -x
-          export BASEDIR="$(pwd)"
-          export THEOS="${BASEDIR}/theos"
-          cd Packages
-          make -j$(sysctl -n hw.physicalcpu)
-          cd ..
-          cp Packages/libkrw-provider/libkrw-dopamine.deb Application/Dopamine/Resources/
-          cp Packages/libroot/libroot.deb Application/Dopamine/Resources/
-          cp Packages/basebin-link/basebin-link.deb Application/Dopamine/Resources/
-
       - name: Build
         run: |
           set -x
@@ -98,6 +86,9 @@ jobs:
           plutil -insert items.$DOCreditsCellIndex.names -xml "<dict><key>name</key><string>${{ github.actor }}</string><key>link</key><string>https://github.com/${{ github.repository }}</string></dict>" -append ./Application/Dopamine/UI/Settings/Credits.plist
           rm -rf $(xcrun --sdk iphoneos --show-sdk-path)/usr/include/xpc $(xcrun --sdk iphoneos --show-sdk-path)/usr/include/xpc.modulemap
           gmake -j$(sysctl -n hw.physicalcpu)
+          cp Packages/libkrw-provider/libkrw-dopamine.deb Application/Dopamine/Resources/ || true
+          cp Packages/libroot/libroot.deb Application/Dopamine/Resources/ || true
+          cp Packages/basebin-link/basebin-link.deb Application/Dopamine/Resources/ || true
           VERSION=$(cat ./BaseBin/_external/basebin/.version)-$(git rev-parse --short HEAD)
           mv ./Application/Dopamine.tipa  "./Application/roothide-Dopamine-${VERSION}.tipa"
           echo "version=${VERSION}" >> $GITHUB_ENV
