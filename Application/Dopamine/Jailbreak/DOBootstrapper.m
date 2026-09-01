@@ -718,10 +718,14 @@ int getCFMajorVersion(void)
 
     NSString* jbroot_path = installPath;
 
-    if([fm fileExistsAtPath:jbroot_path]) {
-        ASSERT([fm removeItemAtPath:jbroot_path error:nil]);
+    if(mkdir(jbroot_path.fileSystemRepresentation, 0755) != 0) {
+        if(errno == EEXIST) {
+            ASSERT([fm removeItemAtPath:jbroot_path error:nil]);
+            ASSERT(mkdir(jbroot_path.fileSystemRepresentation, 0755) == 0);
+        } else {
+            ASSERT(FALSE);
+        }
     }
-    ASSERT(mkdir(jbroot_path.fileSystemRepresentation, 0755) == 0);
     ASSERT(chown(jbroot_path.fileSystemRepresentation, 0, 0) == 0);
 
     find_jbroot(YES);
@@ -754,11 +758,22 @@ int getCFMajorVersion(void)
     ASSERT([fm moveItemAtPath:jbrootPrefix(@"/var") toPath:[jbroot_secondary stringByAppendingPathComponent:@"/var"] error:nil]);
     ASSERT([fm createSymbolicLinkAtPath:jbrootPrefix(@"/var") withDestinationPath:@"private/var" error:nil]);
 
-    ASSERT([fm removeItemAtPath:jbrootPrefix(@"/private/var") error:nil]);
+    if(![fm fileExistsAtPath:jbrootPrefix(@"/private")]) {
+        ASSERT([fm createDirectoryAtPath:jbrootPrefix(@"/private") withIntermediateDirectories:YES attributes:nil error:nil]);
+    }
+    if([fm fileExistsAtPath:jbrootPrefix(@"/private/var")]) {
+        ASSERT([fm removeItemAtPath:jbrootPrefix(@"/private/var") error:nil]);
+    }
     ASSERT([fm createSymbolicLinkAtPath:jbrootPrefix(@"/private/var") withDestinationPath:[jbroot_secondary stringByAppendingPathComponent:@"/var"] error:nil]);
 
-    ASSERT([fm removeItemAtPath:[jbroot_secondary stringByAppendingPathComponent:@"/var/tmp"] error:nil]);
-    ASSERT([fm moveItemAtPath:jbrootPrefix(@"/tmp") toPath:[jbroot_secondary stringByAppendingPathComponent:@"/var/tmp"] error:nil]);
+    if([fm fileExistsAtPath:jbrootPrefix(@"/tmp")]) {
+        if([fm fileExistsAtPath:[jbroot_secondary stringByAppendingPathComponent:@"/var/tmp"]]) {
+            ASSERT([fm removeItemAtPath:[jbroot_secondary stringByAppendingPathComponent:@"/var/tmp"] error:nil]);
+        }
+        ASSERT([fm moveItemAtPath:jbrootPrefix(@"/tmp") toPath:[jbroot_secondary stringByAppendingPathComponent:@"/var/tmp"] error:nil]);
+    } else {
+        ASSERT([fm createDirectoryAtPath:[jbroot_secondary stringByAppendingPathComponent:@"/var/tmp"] withIntermediateDirectories:YES attributes:nil error:nil]);
+    }
     ASSERT([fm createSymbolicLinkAtPath:jbrootPrefix(@"/tmp") withDestinationPath:@"var/tmp" error:nil]);
 
     ASSERT([fm createSymbolicLinkAtPath:[jbroot_secondary stringByAppendingPathComponent:@".jbroot"]
