@@ -76,6 +76,18 @@ jobs:
             cd Application/Dopamine/Resources
             ./download_bootstraps.sh
 
+      - name: Build Packages
+        run: |
+          set -x
+          export BASEDIR="$(pwd)"
+          export THEOS="${BASEDIR}/theos"
+          cd Packages
+          make -j$(sysctl -n hw.physicalcpu)
+          cd ..
+          cp Packages/libkrw-provider/libkrw-dopamine.deb Application/Dopamine/Resources/
+          cp Packages/libroot/libroot.deb Application/Dopamine/Resources/
+          cp Packages/basebin-link/basebin-link.deb Application/Dopamine/Resources/
+
       - name: Build
         run: |
           set -x
