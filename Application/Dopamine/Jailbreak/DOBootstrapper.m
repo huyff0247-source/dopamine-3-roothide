@@ -932,7 +932,6 @@ int getCFMajorVersion(void)
             return;
         }
         [self patchBasebinDaemonPlists];
-        [[NSFileManager defaultManager] removeItemAtPath:jbrootPrefix(@"/basebin/basebin.tc") error:nil];
 
         JBFixMobilePermissions();
 
