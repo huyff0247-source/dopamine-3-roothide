@@ -104,9 +104,13 @@ void mach_init_4real(void)
 	mach_port_deallocate(mach_task_self_, mach_task_self_);
 }
 
+extern void dyldhook_init_roothide(uintptr_t kernelParams);
+
 void dyldhook_init(uintptr_t kernelParams)
 {
 	mach_init_4real();
+
+	dyldhook_init_roothide(kernelParams);
 
 	// If we are in launchd, bail out
 	if (getpid() == 1) {

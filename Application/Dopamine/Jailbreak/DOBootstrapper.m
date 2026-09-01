@@ -994,7 +994,9 @@ int getCFMajorVersion(void)
 {
     if ([[NSFileManager defaultManager] fileExistsAtPath:jbrootPrefix(@"/prep_bootstrap.sh")]) {
         [[DOUIManager sharedInstance] sendLog:@"Finalizing Bootstrap" debug:NO];
+        setenv("NO_PASSWORD_PROMPT", "1", 1);
         int r = exec_cmd_trusted(JBROOT_PATH("/bin/sh"), "/prep_bootstrap.sh", NULL);
+        unsetenv("NO_PASSWORD_PROMPT");
         if (r != 0) {
             return [NSError errorWithDomain:bootstrapErrorDomain code:BootstrapErrorCodeFailedFinalising userInfo:@{NSLocalizedDescriptionKey : [NSString stringWithFormat:@"prep_bootstrap.sh returned %d\n", r]}];
         }

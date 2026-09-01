@@ -10,6 +10,7 @@
 #include "../systemhook/src/common/common.h"
 #include "../systemhook/src/common/envbuf.h"
 
+#undef HOOK_DYLIB_PATH
 const char* HOOK_DYLIB_PATH = NULL;
 
 #define POSIX_SPAWN_PROC_TYPE_DRIVER 0x700
@@ -142,7 +143,8 @@ void roothide_launchd_postinit(bool firstLoad)
 	{
 		litehook_hook_function(__sysctl, __sysctl_hook);
 		litehook_hook_function(__sysctlbyname, __sysctlbyname_hook);
-		litehook_hook_function(bind, new_bind);
+		orig_bind = bind;
+		litehook_rebind_symbol(LITEHOOK_REBIND_GLOBAL, (void*)bind, (void*)new_bind, NULL);
 	}
 #ifdef __arm64e__
 	else
@@ -163,8 +165,10 @@ void roothide_launchd_postinit(bool firstLoad)
 
 	loadAppStoredIdentifiers();
 
-	litehook_hook_function(xpc_dictionary_create_reply, new_xpc_dictionary_create_reply);
-	litehook_hook_function(xpc_pipe_routine_reply, new_xpc_pipe_routine_reply);
+	orig_xpc_dictionary_create_reply = xpc_dictionary_create_reply;
+	litehook_rebind_symbol(LITEHOOK_REBIND_GLOBAL, (void*)xpc_dictionary_create_reply, (void*)new_xpc_dictionary_create_reply, NULL);
+	orig_xpc_pipe_routine_reply = xpc_pipe_routine_reply;
+	litehook_rebind_symbol(LITEHOOK_REBIND_GLOBAL, (void*)xpc_pipe_routine_reply, (void*)new_xpc_pipe_routine_reply, NULL);
 
 	// load jailbreakd after applying hooks
 	assert(initJailbreakd(firstLoad) == 0);
@@ -174,12 +178,12 @@ void roothide_launchd_postinit(bool firstLoad)
 #include <IOKit/IOKitLib.h>
 void fix__iosConnect()
 {
-    MSImageRef IOSurfaceImage = MSGetImageByName("/System/Library/Frameworks/IOSurface.framework/IOSurface");
+    void* IOSurfaceImage = dlopen("/System/Library/Frameworks/IOSurface.framework/IOSurface", RTLD_LAZY);
     JBLogDebug("IOSurfaceImage=%p\n", IOSurfaceImage);
     assert(IOSurfaceImage != NULL);
 
-    io_service_t* __iosService = MSFindSymbol(IOSurfaceImage, "__iosService");
-    io_connect_t* __iosConnect = MSFindSymbol(IOSurfaceImage, "__iosConnect");
+    io_service_t* __iosService = (io_service_t*)dlsym(IOSurfaceImage, "__iosService");
+    io_connect_t* __iosConnect = (io_connect_t*)dlsym(IOSurfaceImage, "__iosConnect");
     assert(__iosService != NULL && __iosConnect != NULL);
 
     JBLogDebug("__iosService=%p __iosConnect=%p\n", __iosService, __iosConnect);

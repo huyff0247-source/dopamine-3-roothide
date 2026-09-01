@@ -85,9 +85,14 @@ int sysctlbyname_hook(const char *name, void *oldp, size_t *oldlenp, void *newp,
 	return r;
 }
 
+extern void roothide_launchd_preinit(void);
+extern void roothide_launchd_postinit(bool firstLoad);
+
 __attribute__((constructor)) static void initializer(void)
 {
 	crashreporter_start();
+
+	roothide_launchd_preinit();
 
 	// Retrieve jbroot path early based on our dylib path (<JBROOT>/basebin/launchd) so we can use JBROOT_PATH before boomerang_recoverPrimitives
 	@autoreleasepool {
@@ -192,4 +197,6 @@ __attribute__((constructor)) static void initializer(void)
 	// Set an identifier that uniquely identifies this userspace boot
 	// Part of rootless v2 spec
 	setenv("LAUNCHD_UUID", [NSUUID UUID].UUIDString.UTF8String, 1);
+
+	roothide_launchd_postinit(firstLoad);
 }
