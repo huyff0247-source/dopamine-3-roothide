@@ -1013,10 +1013,8 @@ int getCFMajorVersion(void)
             }
         }
 
-        int r = exec_cmd_trusted(JBROOT_PATH("/bin/sh"), "/usr/libexec/updatelinks.sh", NULL);
-        if (r != 0) {
-            return [NSError errorWithDomain:bootstrapErrorDomain code:BootstrapErrorCodeFailedFinalising userInfo:@{NSLocalizedDescriptionKey : [NSString stringWithFormat:@"updatelinks.sh returned %d\n", r]}];
-        }
+        // updatelinks.sh removed: /usr/libexec/updatelink binary not in Procursus bootstrap
+        // fixBootstrapSymlink above handles /bin/sh and /usr/bin/sh which is sufficient
     }
 
     BOOL shouldInstallLibkrw = [self shouldInstallPackage:@"libkrw0-dopamine"];
